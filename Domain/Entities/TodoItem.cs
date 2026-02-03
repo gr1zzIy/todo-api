@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using todoApi.Domain.Enums;
 
-namespace todoApi.Domain;
+namespace todoApi.Domain.Entities;
 
 public sealed class TodoItem
 {
@@ -14,7 +16,10 @@ public sealed class TodoItem
     [MaxLength(254)]
     public string Description { get; set; } = string.Empty;
     
-    public bool IsCompleted { get; set; } = false;
-    
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+    
+    [ForeignKey(nameof(StatusItem))]
+    public StatusItemType StatusId { get; set; } = StatusItemType.Pending;
+    
+    public StatusItem? Status { get; set; }
 }
