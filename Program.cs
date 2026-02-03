@@ -1,20 +1,21 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using todoApi.Data;
+using todoApi.Documentation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // EF Core + SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Потрібно для опису ендпоінтів
-builder.Services.AddEndpointsApiExplorer();
-
-// OpenAPI (Scalar читає OpenAPI endpoint)
-builder.Services.AddOpenApi();
+// Swagger (Swashbuckle)
+builder.Services.AddCustomSwagger();
 
 builder.Services.AddHealthChecks();
 
@@ -22,26 +23,23 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    // OpenAPI endpoint (в dev можна публікувати)
-    app.MapOpenApi();
+    app.UseSwagger(); // генерує /swagger/v1/swagger.json
 
-    // Scalar UI
+    // Scalar дивиться на swagger.json (Swashbuckle)
     app.MapScalarApiReference(options =>
     {
-        // опціонально, якщо хочеш інший маршрут UI
-        // options.EndpointPathPrefix = "/docs";
+        options.OpenApiRoutePattern = "/swagger/v1/swagger.json";
     });
+
+    app.UseSwaggerUI();
 }
 else
 {
-    // базова безпека для прод (мінімум)
     app.UseExceptionHandler("/error");
     app.UseHsts();
 }
 
-// Якщо в тебе HTTPS увімкнено
 app.UseHttpsRedirection();
-
 app.MapHealthChecks("/health");
 app.MapControllers();
 
