@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using todoApi.Data;
-using todoApi.Domain;
+using todoApi.Domain.Helpers;
+using todoApi.Domain.Entities;
+using todoApi.Domain.Extensions;
+using todoApi.Domain.Enums;
 using todoApi.Dtos;
 
 namespace todoApi.Controllers;
@@ -24,7 +27,12 @@ public sealed class TodosController : ControllerBase
         var items = await _dbContext.Todos
             .AsNoTracking()
             .OrderByDescending(t => t.CreatedAt)
-            .Select(x => new TodoDto(x.Id, x.Summary, x.Description, x.IsCompleted, x.CreatedAt))
+            .Select(x => new TodoDto(
+                x.Id, 
+                x.Summary, 
+                x.Description, 
+                StatusHelper.GetStatusName(x.StatusId), 
+                x.CreatedAt))
             .ToListAsync(ct);
 
         return Ok(items);
@@ -39,7 +47,12 @@ public sealed class TodosController : ControllerBase
         var item = await _dbContext.Todos
             .AsNoTracking()
             .Where(x => x.Id == id)
-            .Select(x => new TodoDto(x.Id, x.Summary, x.Description, x.IsCompleted, x.CreatedAt))
+            .Select(x => new TodoDto(
+                x.Id, 
+                x.Summary, 
+                x.Description, 
+                StatusHelper.GetStatusName(x.StatusId), 
+                x.CreatedAt))
             .FirstOrDefaultAsync(ct);
 
         return item is null ? NotFound() : Ok(item);
@@ -59,14 +72,20 @@ public sealed class TodosController : ControllerBase
         {
             Summary = summary,
             Description = dto.Description?.Trim() ?? string.Empty,
-            IsCompleted = false,
+            StatusId = StatusItemType.Pending,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
         _dbContext.Todos.Add(entity);
         await _dbContext.SaveChangesAsync(ct);
 
-        var result = new TodoDto(entity.Id, entity.Summary, entity.Description, entity.IsCompleted, entity.CreatedAt);
+        var result = new TodoDto(
+            entity.Id,
+            entity.Summary,
+            entity.Description,
+            StatusHelper.GetStatusName(entity.StatusId),
+            entity.CreatedAt);
+        
         return CreatedAtAction(nameof(GetById), new { id = entity.Id }, result);
     }
 
@@ -86,7 +105,7 @@ public sealed class TodosController : ControllerBase
 
         item.Summary = summary;
         item.Description = dto.Description?.Trim() ?? string.Empty;
-        item.IsCompleted = dto.IsCompleted;
+        item.StatusId = dto.StatusId;
 
         await _dbContext.SaveChangesAsync(ct);
         return NoContent();
@@ -118,10 +137,10 @@ public sealed class TodosController : ControllerBase
         if (item is null)
             return NotFound();
         
-        if (item.IsCompleted)
+        if (item.IsCompleted())
             return NoContent();
-        
-        item.IsCompleted = true;
+
+        item.StatusId = StatusItemType.Completed;
         await _dbContext.SaveChangesAsync(ct);
         return NoContent();
     }
@@ -132,7 +151,7 @@ public sealed class TodosController : ControllerBase
     public async Task<ActionResult> DeleteCompletedTodos(CancellationToken ct)
     {
         var completedTodos = await _dbContext.Todos
-            .Where(t => t.IsCompleted)
+            .Where(t => t.StatusId == StatusItemType.Completed)
             .ToListAsync(ct);
         
         if (completedTodos.Count == 0)
