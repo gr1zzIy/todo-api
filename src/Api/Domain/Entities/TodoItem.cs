@@ -17,6 +17,15 @@ public sealed class TodoItem
     public string Description { get; set; } = string.Empty;
     
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset? Deadline { get; set; } = null;
+    
+    public int? EstimatedTimeMinutes { get; set; } = null; // in minutes
+    
+    public int SpentTimeMinutes { get; set; } = 0; // in minutes
+    
+    [NotMapped]
+    public int? RemainingTimeMinutes => EstimatedTimeMinutes - SpentTimeMinutes;
     
     [ForeignKey(nameof(StatusItem))]
     public StatusItemType StatusId { get; set; } = StatusItemType.Pending;

@@ -8,4 +8,7 @@ public sealed record TodoDto(
     [Required, MaxLength(200)] string Summary, 
     [MaxLength(254)] string Description,
     string Status, 
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? Deadline,
+    int? EstimatedTimeMinutes,
+    int SpentTimeMinutes);

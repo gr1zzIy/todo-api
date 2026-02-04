@@ -65,10 +65,19 @@ namespace todoApi.Migrations
                         .HasColumnType("datetimeoffset")
                         .HasDefaultValueSql("getutcdate()");
 
+                    b.Property<DateTimeOffset?>("Deadline")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(254)
                         .HasColumnType("nvarchar(254)");
+
+                    b.Property<int?>("EstimatedTimeMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SpentTimeMinutes")
+                        .HasColumnType("int");
 
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
