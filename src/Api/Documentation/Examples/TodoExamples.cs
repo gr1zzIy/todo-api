@@ -13,7 +13,10 @@ public sealed class TodoListResponseExample : IExamplesProvider<List<TodoDto>>
             Summary: "Купити продукти",
             Description: "Молоко, яйця, хліб",
             Status: "Pending",
-            CreatedAt: DateTimeOffset.Parse("2024-01-15T10:30:00Z")
+            CreatedAt: DateTimeOffset.Parse("2024-01-15T10:30:00Z"),
+            Deadline: DateTimeOffset.Parse("2024-01-20T18:00:00Z"),
+            EstimatedTimeMinutes: 60,
+            SpentTimeMinutes: 0
         )
     };
 }
@@ -42,6 +45,9 @@ public sealed class TodoResponseExample : IExamplesProvider<TodoDto>
         Summary: "Приклад задачі",
         Description: "Опис прикладної задачі",
         Status: "Pending",
-        CreatedAt: DateTimeOffset.Parse("2024-01-15T10:30:00Z")
+        CreatedAt: DateTimeOffset.Parse("2024-01-15T10:30:00Z"),
+        Deadline: DateTimeOffset.Parse("2024-01-20T18:00:00Z"),
+        EstimatedTimeMinutes: 120,
+        SpentTimeMinutes: 30
     );
 }
