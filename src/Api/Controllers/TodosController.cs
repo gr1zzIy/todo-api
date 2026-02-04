@@ -159,6 +159,29 @@ public sealed class TodosController : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{id:guid}/in-progress")]
+    [SwaggerOperation(
+        Summary = "Позначити задачу як в процесі",
+        Description = "Змінює статус задачі на 'InProgress'. Якщо вже в процесі — 204.",
+        OperationId = "StartTodo"
+    )]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> InProgress([FromRoute] Guid id, CancellationToken ct)
+    {
+        var item = await _dbContext.Todos.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+        if (item is null) 
+            return NotFound();
+
+        if (item.IsInProgress())
+            return NoContent();
+
+        item.StatusId = StatusItemType.InProgress;
+        await _dbContext.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
     [HttpPatch("{id:guid}/complete")]
     [SwaggerOperation(
         Summary = "Позначити задачу як виконану",
