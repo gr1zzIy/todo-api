@@ -41,7 +41,10 @@ public sealed class TodosController : ControllerBase
                 x.Summary,
                 x.Description,
                 StatusHelper.GetStatusName(x.StatusId),
-                x.CreatedAt))
+                x.CreatedAt,
+                x.Deadline,
+                x.EstimatedTimeMinutes,
+                x.SpentTimeMinutes))
             .ToListAsync(ct);
 
         return Ok(items);
@@ -50,11 +53,11 @@ public sealed class TodosController : ControllerBase
     [HttpGet("{id:guid}")]
     [SwaggerOperation(
         Summary = "Отримати задачу за ID",
-        Description = "Повертає задачу за вказаним GUID. Якщо не знайдено — 404.",
+        Description = "Повертає задачу за вказаним GUID. Якщо не знайдено —204.",
         OperationId = "GetTodoById"
     )]
     [ProducesResponseType(typeof(TodoDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(TodoResponseExample))]
     public async Task<ActionResult<TodoDto>> GetById([FromRoute] Guid id, CancellationToken ct)
     {
@@ -66,10 +69,13 @@ public sealed class TodosController : ControllerBase
                 x.Summary,
                 x.Description,
                 StatusHelper.GetStatusName(x.StatusId),
-                x.CreatedAt))
+                x.CreatedAt,
+                x.Deadline,
+                x.EstimatedTimeMinutes,
+                x.SpentTimeMinutes))
             .FirstOrDefaultAsync(ct);
 
-        return item is null ? NotFound() : Ok(item);
+        return item is null ? NoContent() : Ok(item);
     }
 
     [HttpPost]
@@ -106,7 +112,10 @@ public sealed class TodosController : ControllerBase
             entity.Summary,
             entity.Description,
             StatusHelper.GetStatusName(entity.StatusId),
-            entity.CreatedAt);
+            entity.CreatedAt,
+            entity.Deadline,
+            entity.EstimatedTimeMinutes,
+            entity.SpentTimeMinutes);
 
         return CreatedAtAction(nameof(GetById), new { id = entity.Id }, result);
     }
@@ -118,7 +127,6 @@ public sealed class TodosController : ControllerBase
         OperationId = "UpdateTodo"
     )]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerRequestExample(typeof(UpdateTodoDto), typeof(UpdateTodoRequestExample))]
     public async Task<ActionResult> Update(
@@ -131,7 +139,8 @@ public sealed class TodosController : ControllerBase
             return BadRequest(new { error = "Summary is required." });
 
         var item = await _dbContext.Todos.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (item is null) return NotFound();
+        if (item is null) 
+            return NoContent();
 
         item.Summary = summary;
         item.Description = dto.Description?.Trim() ?? string.Empty;
@@ -144,82 +153,17 @@ public sealed class TodosController : ControllerBase
     [HttpDelete("{id:guid}")]
     [SwaggerOperation(
         Summary = "Видалити задачу",
-        Description = "Видаляє задачу за GUID. Якщо не знайдено — 404.",
+        Description = "Видаляє задачу за GUID. Якщо не знайдено — 204.",
         OperationId = "DeleteTodo"
     )]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Delete([FromRoute] Guid id, CancellationToken ct)
     {
         var item = await _dbContext.Todos.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (item is null) return NotFound();
+        if (item is null) 
+            return NoContent();
 
         _dbContext.Todos.Remove(item);
-        await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
-    }
-
-    [HttpPatch("{id:guid}/in-progress")]
-    [SwaggerOperation(
-        Summary = "Позначити задачу як в процесі",
-        Description = "Змінює статус задачі на 'InProgress'. Якщо вже в процесі — 204.",
-        OperationId = "StartTodo"
-    )]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> InProgress([FromRoute] Guid id, CancellationToken ct)
-    {
-        var item = await _dbContext.Todos.FirstOrDefaultAsync(x => x.Id == id, ct);
-
-        if (item is null) 
-            return NotFound();
-
-        if (item.IsInProgress())
-            return NoContent();
-
-        item.StatusId = StatusItemType.InProgress;
-        await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
-    }
-
-    [HttpPatch("{id:guid}/complete")]
-    [SwaggerOperation(
-        Summary = "Позначити задачу як виконану",
-        Description = "Змінює статус задачі на 'Completed'. Якщо вже виконана — 204.",
-        OperationId = "CompleteTodo"
-    )]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> Complete([FromRoute] Guid id, CancellationToken ct)
-    {
-        var item = await _dbContext.Todos.FirstOrDefaultAsync(x => x.Id == id, ct);
-        if (item is null) return NotFound();
-
-        if (item.IsCompleted())
-            return NoContent();
-
-        item.StatusId = StatusItemType.Completed;
-        await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
-    }
-
-    [HttpDelete("completed")]
-    [SwaggerOperation(
-        Summary = "Видалити виконані задачі",
-        Description = "Видаляє всі задачі зі статусом 'Completed'. Якщо таких немає — 204.",
-        OperationId = "DeleteCompletedTodos"
-    )]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult> DeleteCompleted(CancellationToken ct)
-    {
-        var completedTodos = await _dbContext.Todos
-            .Where(t => t.StatusId == StatusItemType.Completed)
-            .ToListAsync(ct);
-
-        if (completedTodos.Count == 0)
-            return NoContent();
-
-        _dbContext.Todos.RemoveRange(completedTodos);
         await _dbContext.SaveChangesAsync(ct);
         return NoContent();
     }
