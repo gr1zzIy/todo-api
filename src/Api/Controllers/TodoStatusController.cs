@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using todoApi.Data;
-using todoApi.Domain.Entities;
 using todoApi.Domain.Enums;
 using todoApi.Domain.Extensions;
 using todoApi.Domain.Helpers;
@@ -52,6 +51,7 @@ public class TodoStatusController : ControllerBase
         Description = "Змінює статус задачі на 'Pending'. Якщо вже очікуюча — 204.",
         OperationId = "SetTodoPending"
     )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult> Pending([FromRoute] Guid id, CancellationToken ct)
     {
@@ -66,7 +66,7 @@ public class TodoStatusController : ControllerBase
 
         item.StatusId = StatusItemType.Pending;
         await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
+        return Ok();
     }
     
     [HttpPatch("{id:guid}/in-progress")]
@@ -75,22 +75,22 @@ public class TodoStatusController : ControllerBase
         Description = "Змінює статус задачі на 'InProgress'. Якщо вже в процесі — 204.",
         OperationId = "StartTodo"
     )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> InProgress([FromRoute] Guid id, CancellationToken ct)
     {
         var item = await _dbContext.Todos
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
         if (item is null) 
-            return NotFound();
+            return NoContent();
 
         if (item.IsInProgress())
             return NoContent();
 
         item.StatusId = StatusItemType.InProgress;
         await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
+        return Ok();
     }
 
     [HttpPatch("{id:guid}/complete")]
@@ -99,22 +99,22 @@ public class TodoStatusController : ControllerBase
         Description = "Змінює статус задачі на 'Completed'. Якщо вже виконана — 204.",
         OperationId = "CompleteTodo"
     )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Complete([FromRoute] Guid id, CancellationToken ct)
     {
         var item = await _dbContext.Todos
             .FirstOrDefaultAsync(x => x.Id == id, ct);
         
         if (item is null) 
-            return NotFound();
+            return NoContent();
 
         if (item.IsCompleted())
             return NoContent();
 
         item.StatusId = StatusItemType.Completed;
         await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
+        return Ok();
     }
 
     [HttpDelete("close-completed")]
@@ -123,6 +123,7 @@ public class TodoStatusController : ControllerBase
         Description = "Видаляє всі задачі зі статусом 'Completed'. Якщо таких немає — 204.",
         OperationId = "DeleteCompletedTodos"
     )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult> DeleteCompleted(CancellationToken ct)
     {
@@ -135,6 +136,6 @@ public class TodoStatusController : ControllerBase
 
         _dbContext.Todos.RemoveRange(completedTodos);
         await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
+        return Ok();
     }
 }

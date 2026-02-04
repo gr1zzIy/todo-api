@@ -126,6 +126,7 @@ public sealed class TodosController : ControllerBase
         Description = "Оновлює всі поля існуючої задачі. Поле Summary є обов'язковим.",
         OperationId = "UpdateTodo"
     )]
+    [ProducesResponseType(typeof(TodoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerRequestExample(typeof(UpdateTodoDto), typeof(UpdateTodoRequestExample))]
@@ -147,7 +148,7 @@ public sealed class TodosController : ControllerBase
         item.StatusId = dto.StatusId;
 
         await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
+        return Ok();
     }
 
     [HttpDelete("{id:guid}")]
@@ -156,6 +157,7 @@ public sealed class TodosController : ControllerBase
         Description = "Видаляє задачу за GUID. Якщо не знайдено — 204.",
         OperationId = "DeleteTodo"
     )]
+    [ProducesResponseType(typeof(TodoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult> Delete([FromRoute] Guid id, CancellationToken ct)
     {
@@ -165,6 +167,6 @@ public sealed class TodosController : ControllerBase
 
         _dbContext.Todos.Remove(item);
         await _dbContext.SaveChangesAsync(ct);
-        return NoContent();
+        return Ok();
     }
 }
